@@ -1,5 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Modal from '../components/ui/Modal';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 type TypeItem = { id: number; code: string; label: string; enabled: boolean; order: number };
 
@@ -10,6 +13,9 @@ export default function TypesPage() {
   const [liabilityForm, setLiabilityForm] = useState({ code: '', label: '' });
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [editingAsset, setEditingAsset] = useState<TypeItem | null>(null);
+  const [editingLiability, setEditingLiability] = useState<TypeItem | null>(null);
+  const [deleting, setDeleting] = useState<{ kind: 'asset' | 'liability'; id: number } | null>(null);
 
   async function refresh() {
     const [a, l] = await Promise.all([
@@ -63,12 +69,15 @@ export default function TypesPage() {
           </form>
           <table className="table">
             <thead>
-              <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th></tr>
+              <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th><th>操作</th></tr>
             </thead>
             <tbody>
               {assetTypes.length === 0 && (<tr><td className="text-muted" colSpan={4}>暂无数据</td></tr>)}
               {assetTypes.map(t => (
-                <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td></tr>
+                <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td><td>
+                  <button className="btn btn-default px-2 py-1 mr-2" onClick={() => setEditingAsset(t)}>编辑</button>
+                  <button className="btn btn-default px-2 py-1" onClick={() => setDeleting({ kind: 'asset', id: t.id })}>删除</button>
+                </td></tr>
               ))}
             </tbody>
           </table>
@@ -82,17 +91,67 @@ export default function TypesPage() {
           </form>
           <table className="table">
             <thead>
-              <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th></tr>
+              <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th><th>操作</th></tr>
             </thead>
             <tbody>
               {liabilityTypes.length === 0 && (<tr><td className="text-muted" colSpan={4}>暂无数据</td></tr>)}
               {liabilityTypes.map(t => (
-                <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td></tr>
+                <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td><td>
+                  <button className="btn btn-default px-2 py-1 mr-2" onClick={() => setEditingLiability(t)}>编辑</button>
+                  <button className="btn btn-default px-2 py-1" onClick={() => setDeleting({ kind: 'liability', id: t.id })}>删除</button>
+                </td></tr>
               ))}
             </tbody>
           </table>
         </section>
       </div>
+
+      <Modal open={!!editingAsset} title="编辑资产类型" onClose={() => setEditingAsset(null)}
+        footer={<>
+          <Button variant="default" onClick={() => setEditingAsset(null)}>取消</Button>
+          <Button onClick={async () => {
+            if (!editingAsset) return;
+            const payload = { label: editingAsset.label, enabled: editingAsset.enabled };
+            const res = await fetch(`/api/asset-types/${editingAsset.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
+            if (res.ok) { setEditingAsset(null); await refresh(); setMsg('已更新资产类型'); } else { setErr('更新失败，请检查登录或输入'); }
+          }}>保存</Button>
+        </>}>
+        {editingAsset && (
+          <div className="grid gap-3">
+            <Input placeholder="名称" value={editingAsset.label} onChange={(e) => setEditingAsset({ ...editingAsset, label: e.target.value })} />
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={!!editingLiability} title="编辑负债类型" onClose={() => setEditingLiability(null)}
+        footer={<>
+          <Button variant="default" onClick={() => setEditingLiability(null)}>取消</Button>
+          <Button onClick={async () => {
+            if (!editingLiability) return;
+            const payload = { label: editingLiability.label, enabled: editingLiability.enabled };
+            const res = await fetch(`/api/liability-types/${editingLiability.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
+            if (res.ok) { setEditingLiability(null); await refresh(); setMsg('已更新负债类型'); } else { setErr('更新失败，请检查登录或输入'); }
+          }}>保存</Button>
+        </>}>
+        {editingLiability && (
+          <div className="grid gap-3">
+            <Input placeholder="名称" value={editingLiability.label} onChange={(e) => setEditingLiability({ ...editingLiability, label: e.target.value })} />
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={!!deleting} title="确认删除类型" onClose={() => setDeleting(null)}
+        footer={<>
+          <Button variant="default" onClick={() => setDeleting(null)}>取消</Button>
+          <Button onClick={async () => {
+            if (!deleting) return;
+            const url = deleting.kind === 'asset' ? `/api/asset-types/${deleting.id}` : `/api/liability-types/${deleting.id}`;
+            const res = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
+            if (res.ok) { setDeleting(null); await refresh(); setMsg('已删除类型'); } else { setErr('删除失败，请检查登录或引用关系'); }
+          }}>删除</Button>
+        </>}>
+        <div className="text-sm text-muted">删除后不可恢复。</div>
+      </Modal>
     </div>
   );
 }

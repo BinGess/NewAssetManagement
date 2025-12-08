@@ -1,15 +1,23 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '../../../lib/prisma';
+import { requireAuth } from '../../../lib/auth';
+import { TypeCreateSchema } from '../../../lib/schemas';
 
 export async function GET() {
   const types = await prisma.liabilityType.findMany({ orderBy: { order: 'asc' } });
   return NextResponse.json(types);
 }
 
-export async function POST(req: Request) {
-  const data = await req.json();
-  const created = await prisma.liabilityType.create({ data });
+export async function POST(req: NextRequest) {
+  const unauthorized = requireAuth(req);
+  if (unauthorized) return unauthorized;
+  const json = await req.json();
+  const parsed = TypeCreateSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 });
+  }
+  const created = await prisma.liabilityType.create({ data: parsed.data });
   return NextResponse.json(created);
 }

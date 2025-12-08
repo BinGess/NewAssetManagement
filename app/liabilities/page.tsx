@@ -1,5 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Modal from '../components/ui/Modal';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import Button from '../components/ui/Button';
 
 export default function LiabilitiesPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -9,6 +13,8 @@ export default function LiabilitiesPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState<any | null>(null);
 
   async function refresh() {
     try {
@@ -66,39 +72,39 @@ export default function LiabilitiesPage() {
       <div className="card p-4">
       <form onSubmit={onSubmit} className="grid grid-cols-6 gap-3">
         <div>
-          <input className="input" placeholder="名称" required aria-invalid={!!fieldErrors.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input placeholder="名称" required aria-invalid={!!fieldErrors.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           {fieldErrors.name && <div className="text-red-600 text-xs mt-1">{fieldErrors.name}</div>}
         </div>
         <div>
-          <select className="select" required aria-invalid={!!fieldErrors.typeId} value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
+          <Select required aria-invalid={!!fieldErrors.typeId} value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
           <option value="">类型</option>
           {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
-          </select>
+          </Select>
           {fieldErrors.typeId && <div className="text-red-600 text-xs mt-1">{fieldErrors.typeId}</div>}
         </div>
         {types.length === 0 && (
           <div className="text-sm text-muted col-span-6">暂无负债类型，请前往 <a href="/types" className="text-primary">类型管理</a> 新增。</div>
         )}
         <div>
-          <input className="input" type="number" step="0.01" placeholder="金额" required aria-invalid={!!fieldErrors.amount} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+          <Input type="number" step="0.01" placeholder="金额" required aria-invalid={!!fieldErrors.amount} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
           {fieldErrors.amount && <div className="text-red-600 text-xs mt-1">{fieldErrors.amount}</div>}
         </div>
         <div>
-          <input className="input" type="number" step="0.0001" placeholder="利率(可选)" aria-invalid={!!fieldErrors.interestRate} value={form.interestRate} onChange={(e) => setForm({ ...form, interestRate: e.target.value })} />
+          <Input type="number" step="0.0001" placeholder="利率(可选)" aria-invalid={!!fieldErrors.interestRate} value={form.interestRate} onChange={(e) => setForm({ ...form, interestRate: e.target.value })} />
           {fieldErrors.interestRate && <div className="text-red-600 text-xs mt-1">{fieldErrors.interestRate}</div>}
         </div>
         <div>
-          <input className="input" type="date" aria-invalid={!!fieldErrors.dueDate} value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+          <Input type="date" aria-invalid={!!fieldErrors.dueDate} value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
           {fieldErrors.dueDate && <div className="text-red-600 text-xs mt-1">{fieldErrors.dueDate}</div>}
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? '提交中' : '添加'}</button>
+        <Button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</Button>
       </form>
       </div>
       <div className="card p-0">
       <table className="table">
         <thead>
           <tr>
-            <th>名称</th><th>类型</th><th>金额</th><th>利率</th><th>币种</th><th>到期日</th>
+              <th>名称</th><th>类型</th><th>金额</th><th>利率</th><th>币种</th><th>到期日</th><th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -111,6 +117,10 @@ export default function LiabilitiesPage() {
               <td>{it.interestRate ? Number(it.interestRate).toFixed(4) : '-'}</td>
               <td>{it.currency}</td>
               <td>{it.dueDate ? new Date(it.dueDate).toLocaleDateString() : '-'}</td>
+              <td>
+                <button className="btn btn-default px-2 py-1 mr-2" onClick={() => setEditing(it)}>编辑</button>
+                <button className="btn btn-default px-2 py-1" onClick={() => setDeleting(it)}>删除</button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -119,3 +129,41 @@ export default function LiabilitiesPage() {
     </div>
   );
 }
+      <Modal open={!!editing} title="编辑负债" onClose={() => setEditing(null)}
+        footer={<>
+          <Button variant="default" onClick={() => setEditing(null)}>取消</Button>
+          <Button onClick={async () => {
+            if (!editing) return;
+            const payload = {
+              name: editing.name,
+              typeId: editing.typeId,
+              amount: Number(editing.amount),
+              interestRate: editing.interestRate ? Number(editing.interestRate) : null,
+              currency: editing.currency,
+              dueDate: editing.dueDate ? new Date(editing.dueDate) : null,
+              notes: editing.notes || '',
+            };
+            const res = await fetch(`/api/liabilities/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
+            if (res.ok) { setEditing(null); await refresh(); setSuccess('已更新'); } else { setError('更新失败，检查输入或登录'); }
+          }}>保存</Button>
+        </>}>
+        {editing && (
+          <div className="grid gap-3">
+            <Input placeholder="名称" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+            <Select value={editing.typeId} onChange={(e) => setEditing({ ...editing, typeId: Number(e.target.value) })}>
+              {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
+            </Select>
+            <Input type="number" step="0.01" placeholder="金额" value={editing.amount} onChange={(e) => setEditing({ ...editing, amount: e.target.value })} />
+            <Input type="number" step="0.0001" placeholder="利率(可选)" value={editing.interestRate || ''} onChange={(e) => setEditing({ ...editing, interestRate: e.target.value })} />
+            <Input type="date" value={editing.dueDate?.slice?.(0,10) || ''} onChange={(e) => setEditing({ ...editing, dueDate: e.target.value })} />
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={!!deleting} title="确认删除负债" onClose={() => setDeleting(null)}
+        footer={<>
+          <Button variant="default" onClick={() => setDeleting(null)}>取消</Button>
+          <Button onClick={async () => { if (!deleting) return; const res = await fetch(`/api/liabilities/${deleting.id}`, { method: 'DELETE', credentials: 'same-origin' }); if (res.ok) { setDeleting(null); await refresh(); setSuccess('已删除'); } else { setError('删除失败，请登录或稍后再试'); } }}>删除</Button>
+        </>}>
+        <div className="text-sm text-muted">删除后不可恢复。</div>
+      </Modal>

@@ -1,15 +1,25 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
+import { requireAuth } from '../../../../lib/auth';
+import { TypeUpdateSchema } from '../../../../lib/schemas';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const body = await req.json();
-  const updated = await prisma.assetType.update({ where: { id: Number(params.id) }, data: body });
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const unauthorized = requireAuth(req);
+  if (unauthorized) return unauthorized;
+  const json = await req.json();
+  const parsed = TypeUpdateSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 });
+  }
+  const updated = await prisma.assetType.update({ where: { id: Number(params.id) }, data: parsed.data });
   return NextResponse.json(updated);
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const unauthorized = requireAuth(req);
+  if (unauthorized) return unauthorized;
   await prisma.assetType.delete({ where: { id: Number(params.id) } });
   return NextResponse.json({ ok: true });
 }
