@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: asset-web
+    env: node
+    plan: free
+    autoDeploy: true
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma db push && node prisma/seed.js && npm start
+    envVars:
+      - key: DATABASE_PROVIDER
+        value: postgresql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: asset-db
+          property: internalConnectionString
+      - key: ADMIN_PASSWORD
+        generateValue: true
+
+databases:
+  - name: asset-db
+    plan: free
+    databaseName: assetdb
