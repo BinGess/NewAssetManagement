@@ -5,6 +5,9 @@ export default function LiabilitiesPage() {
   const [items, setItems] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
   const [form, setForm] = useState({ name: '', typeId: '', amount: '', interestRate: '', currency: 'CNY', dueDate: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   async function refresh() {
     const [resItems, resTypes] = await Promise.all([fetch('/api/liabilities'), fetch('/api/liability-types')]);
@@ -16,6 +19,9 @@ export default function LiabilitiesPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
     const payload = {
       name: form.name,
       typeId: Number(form.typeId),
@@ -24,9 +30,16 @@ export default function LiabilitiesPage() {
       currency: form.currency,
       dueDate: form.dueDate ? new Date(form.dueDate) : null,
     };
-    await fetch('/api/liabilities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    setForm({ name: '', typeId: '', amount: '', interestRate: '', currency: 'CNY', dueDate: '' });
-    refresh();
+    const res = await fetch('/api/liabilities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data?.errors === 'string' ? data.errors : '提交失败，请检查输入或登录');
+    } else {
+      setSuccess('已添加');
+      setForm({ name: '', typeId: '', amount: '', interestRate: '', currency: 'CNY', dueDate: '' });
+      await refresh();
+    }
+    setLoading(false);
   }
 
   return (
@@ -41,8 +54,10 @@ export default function LiabilitiesPage() {
         <input type="number" step="0.01" placeholder="金额" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
         <input type="number" step="0.0001" placeholder="利率(可选)" value={form.interestRate} onChange={(e) => setForm({ ...form, interestRate: e.target.value })} />
         <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
-        <button type="submit">添加</button>
+        <button type="submit" disabled={loading || !form.name || !form.typeId || !form.amount}>{loading ? '提交中' : '添加'}</button>
       </form>
+      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
+      {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}
       <table>
         <thead>
           <tr>

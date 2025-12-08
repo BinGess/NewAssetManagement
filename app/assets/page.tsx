@@ -5,6 +5,9 @@ export default function AssetsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
   const [form, setForm] = useState({ name: '', typeId: '', amount: '', currency: 'CNY', valuationDate: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   async function refresh() {
     const [resItems, resTypes] = await Promise.all([fetch('/api/assets'), fetch('/api/asset-types')]);
@@ -16,6 +19,9 @@ export default function AssetsPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
     const payload = {
       name: form.name,
       typeId: Number(form.typeId),
@@ -23,9 +29,16 @@ export default function AssetsPage() {
       currency: form.currency,
       valuationDate: new Date(form.valuationDate),
     };
-    await fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    setForm({ name: '', typeId: '', amount: '', currency: 'CNY', valuationDate: '' });
-    refresh();
+    const res = await fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data?.errors === 'string' ? data.errors : '提交失败，请检查输入或登录');
+    } else {
+      setSuccess('已添加');
+      setForm({ name: '', typeId: '', amount: '', currency: 'CNY', valuationDate: '' });
+      await refresh();
+    }
+    setLoading(false);
   }
 
   return (
@@ -39,8 +52,10 @@ export default function AssetsPage() {
         </select>
         <input type="number" step="0.01" placeholder="金额" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
         <input type="date" value={form.valuationDate} onChange={(e) => setForm({ ...form, valuationDate: e.target.value })} />
-        <button type="submit">添加</button>
+        <button type="submit" disabled={loading || !form.name || !form.typeId || !form.amount || !form.valuationDate}>{loading ? '提交中' : '添加'}</button>
       </form>
+      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
+      {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}
       <table>
         <thead>
           <tr>
