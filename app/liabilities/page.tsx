@@ -59,48 +59,50 @@ export default function LiabilitiesPage() {
   }
 
   return (
-    <div>
-      <h2>负债列表</h2>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 12 }}>
+    <div className="grid gap-4">
+      <h2 className="text-xl font-semibold">负债列表</h2>
+      {error && <div className="alert alert-error">{error} {error?.includes('未登录') && (<a href="/login" className="ml-2 text-primary">登录</a>)}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
+      <div className="card p-4">
+      <form onSubmit={onSubmit} className="grid grid-cols-6 gap-3">
         <div>
-          <input placeholder="名称" required aria-invalid={!!fieldErrors.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          {fieldErrors.name && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.name}</div>}
+          <input className="input" placeholder="名称" required aria-invalid={!!fieldErrors.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          {fieldErrors.name && <div className="text-red-600 text-xs mt-1">{fieldErrors.name}</div>}
         </div>
         <div>
-          <select required aria-invalid={!!fieldErrors.typeId} value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
+          <select className="select" required aria-invalid={!!fieldErrors.typeId} value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
           <option value="">类型</option>
           {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
           </select>
-          {fieldErrors.typeId && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.typeId}</div>}
+          {fieldErrors.typeId && <div className="text-red-600 text-xs mt-1">{fieldErrors.typeId}</div>}
         </div>
         {types.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', color: '#955' }}>
-            暂无负债类型，请前往 <a href="/types">类型管理</a> 新增。
-          </div>
+          <div className="text-sm text-muted col-span-6">暂无负债类型，请前往 <a href="/types" className="text-primary">类型管理</a> 新增。</div>
         )}
         <div>
-          <input type="number" step="0.01" placeholder="金额" required aria-invalid={!!fieldErrors.amount} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-          {fieldErrors.amount && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.amount}</div>}
+          <input className="input" type="number" step="0.01" placeholder="金额" required aria-invalid={!!fieldErrors.amount} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+          {fieldErrors.amount && <div className="text-red-600 text-xs mt-1">{fieldErrors.amount}</div>}
         </div>
         <div>
-          <input type="number" step="0.0001" placeholder="利率(可选)" aria-invalid={!!fieldErrors.interestRate} value={form.interestRate} onChange={(e) => setForm({ ...form, interestRate: e.target.value })} />
-          {fieldErrors.interestRate && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.interestRate}</div>}
+          <input className="input" type="number" step="0.0001" placeholder="利率(可选)" aria-invalid={!!fieldErrors.interestRate} value={form.interestRate} onChange={(e) => setForm({ ...form, interestRate: e.target.value })} />
+          {fieldErrors.interestRate && <div className="text-red-600 text-xs mt-1">{fieldErrors.interestRate}</div>}
         </div>
         <div>
-          <input type="date" aria-invalid={!!fieldErrors.dueDate} value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
-          {fieldErrors.dueDate && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.dueDate}</div>}
+          <input className="input" type="date" aria-invalid={!!fieldErrors.dueDate} value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+          {fieldErrors.dueDate && <div className="text-red-600 text-xs mt-1">{fieldErrors.dueDate}</div>}
         </div>
-        <button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</button>
+        <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? '提交中' : '添加'}</button>
       </form>
-      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error} {error?.includes('未登录') && (<a href="/login" style={{ marginLeft: 8 }}>登录</a>)}</div>}
-      {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}
-      <table>
+      </div>
+      <div className="card p-0">
+      <table className="table">
         <thead>
           <tr>
             <th>名称</th><th>类型</th><th>金额</th><th>利率</th><th>币种</th><th>到期日</th>
           </tr>
         </thead>
         <tbody>
+          {items.length === 0 && (<tr><td className="text-muted" colSpan={6}>暂无数据</td></tr>)}
           {items.map((it) => (
             <tr key={it.id}>
               <td>{it.name}</td>
@@ -113,6 +115,7 @@ export default function LiabilitiesPage() {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

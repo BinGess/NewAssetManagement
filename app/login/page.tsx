@@ -1,5 +1,9 @@
 'use client';
 import { useState } from 'react';
+import Card from '../../components/ui/Card';
+import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
+import Alert from '../../components/ui/Alert';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
@@ -17,13 +21,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 360 }}>
-      <h2>登录</h2>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 8 }}>
-        <input type="password" placeholder="管理员密码" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button type="submit">登录</button>
-      </form>
-      {msg && <div>{msg}</div>}
+    <div className="flex items-center justify-center">
+      <div className="w-full max-w-sm">
+        <Card className="p-6">
+          <h2 className="text-lg font-medium mb-4">登录</h2>
+          <form onSubmit={onSubmit} className="grid gap-3">
+            <Input type="password" placeholder="管理员密码" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Button type="submit">登录</Button>
+          </form>
+          {msg && (<div className="mt-3"><Alert type={msg.includes('成功') ? 'success' : 'error'}>{msg}</Alert></div>)}
+        </Card>
+      </div>
     </div>
   );
 }

@@ -58,55 +58,60 @@ export default function AssetsPage() {
   }
 
   return (
-    <div>
-      <h2>资产列表</h2>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 12 }}>
-        <div>
-          <input placeholder="名称" required aria-invalid={!!fieldErrors.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          {fieldErrors.name && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.name}</div>}
-        </div>
-        <div>
-          <select required aria-invalid={!!fieldErrors.typeId} value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
-          <option value="">类型</option>
-          {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
-          </select>
-          {fieldErrors.typeId && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.typeId}</div>}
-        </div>
-        {types.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', color: '#955' }}>
-            暂无资产类型，请前往 <a href="/types">类型管理</a> 新增。
+    <div className="grid gap-4">
+      <h2 className="text-xl font-semibold">资产列表</h2>
+      {error && <div className="alert alert-error">{error} {error?.includes('未登录') && (<a href="/login" className="ml-2 text-primary">登录</a>)}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
+      <div className="card p-4">
+        <form onSubmit={onSubmit} className="grid grid-cols-5 gap-3">
+          <div>
+            <input className="input" placeholder="名称" required aria-invalid={!!fieldErrors.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            {fieldErrors.name && <div className="text-red-600 text-xs mt-1">{fieldErrors.name}</div>}
           </div>
+          <div>
+            <select className="select" required aria-invalid={!!fieldErrors.typeId} value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
+              <option value="">类型</option>
+              {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
+            </select>
+            {fieldErrors.typeId && <div className="text-red-600 text-xs mt-1">{fieldErrors.typeId}</div>}
+          </div>
+          <div>
+            <input className="input" type="number" step="0.01" placeholder="金额" required aria-invalid={!!fieldErrors.amount} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            {fieldErrors.amount && <div className="text-red-600 text-xs mt-1">{fieldErrors.amount}</div>}
+          </div>
+          <div>
+            <input className="input" type="date" required aria-invalid={!!fieldErrors.valuationDate} value={form.valuationDate} onChange={(e) => setForm({ ...form, valuationDate: e.target.value })} />
+            {fieldErrors.valuationDate && <div className="text-red-600 text-xs mt-1">{fieldErrors.valuationDate}</div>}
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? '提交中' : '添加'}</button>
+        </form>
+        {types.length === 0 && (
+          <div className="text-sm text-muted mt-3">暂无资产类型，请前往 <a href="/types" className="text-primary">类型管理</a> 新增。</div>
         )}
-        <div>
-          <input type="number" step="0.01" placeholder="金额" required aria-invalid={!!fieldErrors.amount} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-          {fieldErrors.amount && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.amount}</div>}
-        </div>
-        <div>
-          <input type="date" required aria-invalid={!!fieldErrors.valuationDate} value={form.valuationDate} onChange={(e) => setForm({ ...form, valuationDate: e.target.value })} />
-          {fieldErrors.valuationDate && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.valuationDate}</div>}
-        </div>
-        <button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</button>
-      </form>
-      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error} {error?.includes('未登录') && (<a href="/login" style={{ marginLeft: 8 }}>登录</a>)}</div>}
-      {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}
-      <table>
-        <thead>
-          <tr>
-            <th>名称</th><th>类型</th><th>金额</th><th>币种</th><th>估值日期</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it) => (
-            <tr key={it.id}>
-              <td>{it.name}</td>
-              <td>{it.type?.label}</td>
-              <td>{Number(it.amount).toFixed(2)}</td>
-              <td>{it.currency}</td>
-              <td>{new Date(it.valuationDate).toLocaleDateString()}</td>
+      </div>
+      <div className="card p-0">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>名称</th><th>类型</th><th>金额</th><th>币种</th><th>估值日期</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr><td className="text-muted" colSpan={5}>暂无数据</td></tr>
+            )}
+            {items.map((it) => (
+              <tr key={it.id}>
+                <td>{it.name}</td>
+                <td>{it.type?.label}</td>
+                <td>{Number(it.amount).toFixed(2)}</td>
+                <td>{it.currency}</td>
+                <td>{new Date(it.valuationDate).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -49,47 +49,50 @@ export default function TypesPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 24 }}>
-      <h2>类型管理</h2>
-      {err && <div style={{ color: 'red' }}>{err}</div>}
-      {msg && <div style={{ color: 'green' }}>{msg}</div>}
-      <section>
-        <h3>资产类型</h3>
-        <form onSubmit={addAssetType} style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input placeholder="编码" required value={assetForm.code} onChange={(e) => setAssetForm({ ...assetForm, code: e.target.value })} />
-          <input placeholder="名称" required value={assetForm.label} onChange={(e) => setAssetForm({ ...assetForm, label: e.target.value })} />
-          <button type="submit">添加</button>
-        </form>
-        <table>
-          <thead>
-            <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th></tr>
-          </thead>
-          <tbody>
-            {assetTypes.map(t => (
-              <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h3>负债类型</h3>
-        <form onSubmit={addLiabilityType} style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input placeholder="编码" required value={liabilityForm.code} onChange={(e) => setLiabilityForm({ ...liabilityForm, code: e.target.value })} />
-          <input placeholder="名称" required value={liabilityForm.label} onChange={(e) => setLiabilityForm({ ...liabilityForm, label: e.target.value })} />
-          <button type="submit">添加</button>
-        </form>
-        <table>
-          <thead>
-            <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th></tr>
-          </thead>
-          <tbody>
-            {liabilityTypes.map(t => (
-              <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+    <div className="grid gap-4">
+      <h2 className="text-xl font-semibold">类型管理</h2>
+      {err && <div className="alert alert-error">{err}</div>}
+      {msg && <div className="alert alert-success">{msg}</div>}
+      <div className="grid md:grid-cols-2 gap-4">
+        <section className="card p-4">
+          <h3 className="text-sm font-medium mb-3">资产类型</h3>
+          <form onSubmit={addAssetType} className="flex gap-2 mb-3">
+            <input className="input" placeholder="编码" required value={assetForm.code} onChange={(e) => setAssetForm({ ...assetForm, code: e.target.value })} />
+            <input className="input" placeholder="名称" required value={assetForm.label} onChange={(e) => setAssetForm({ ...assetForm, label: e.target.value })} />
+            <button type="submit" className="btn btn-primary">添加</button>
+          </form>
+          <table className="table">
+            <thead>
+              <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th></tr>
+            </thead>
+            <tbody>
+              {assetTypes.length === 0 && (<tr><td className="text-muted" colSpan={4}>暂无数据</td></tr>)}
+              {assetTypes.map(t => (
+                <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+        <section className="card p-4">
+          <h3 className="text-sm font-medium mb-3">负债类型</h3>
+          <form onSubmit={addLiabilityType} className="flex gap-2 mb-3">
+            <input className="input" placeholder="编码" required value={liabilityForm.code} onChange={(e) => setLiabilityForm({ ...liabilityForm, code: e.target.value })} />
+            <input className="input" placeholder="名称" required value={liabilityForm.label} onChange={(e) => setLiabilityForm({ ...liabilityForm, label: e.target.value })} />
+            <button type="submit" className="btn btn-primary">添加</button>
+          </form>
+          <table className="table">
+            <thead>
+              <tr><th>ID</th><th>编码</th><th>名称</th><th>启用</th></tr>
+            </thead>
+            <tbody>
+              {liabilityTypes.length === 0 && (<tr><td className="text-muted" colSpan={4}>暂无数据</td></tr>)}
+              {liabilityTypes.map(t => (
+                <tr key={t.id}><td>{t.id}</td><td>{t.code}</td><td>{t.label}</td><td>{t.enabled ? '是' : '否'}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </div>
     </div>
   );
 }

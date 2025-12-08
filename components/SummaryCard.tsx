@@ -20,30 +20,39 @@ export function SummaryCard() {
       .catch((e) => setError(String(e)));
   }, []);
 
-  if (error) return <div>加载失败：{error}</div>;
-  if (!summary) return <div>加载中...</div>;
+  if (error) return <div className="alert alert-error">加载失败：{error}</div>;
+  if (!summary) return <div className="text-sm text-muted">加载中...</div>;
 
   return (
-    <div style={{ display: 'grid', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <div>总资产：{summary.totalAssets}</div>
-        <div>总负债：{summary.totalLiabilities}</div>
-        <div>净值：{summary.netWorth}</div>
+    <div className="grid gap-4">
+      <div className="grid grid-cols-3 gap-4">
+        <div className="card p-4">
+          <div className="text-sm text-muted">总资产</div>
+          <div className="text-xl font-semibold mt-1">{summary.totalAssets}</div>
+        </div>
+        <div className="card p-4">
+          <div className="text-sm text-muted">总负债</div>
+          <div className="text-xl font-semibold mt-1">{summary.totalLiabilities}</div>
+        </div>
+        <div className="card p-4">
+          <div className="text-sm text-muted">净值</div>
+          <div className="text-xl font-semibold mt-1">{summary.netWorth}</div>
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 24 }}>
-        <div>
-          <h4>资产分类汇总</h4>
-          <ul>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="card p-4">
+          <h4 className="text-sm font-medium mb-2">资产分类汇总</h4>
+          <ul className="text-sm text-muted space-y-1">
             {summary.byAssetTypes.map((t) => (
-              <li key={t.label}>{t.label}: {t.total}</li>
+              <li key={t.label} className="flex justify-between"><span>{t.label}</span><span>{t.total}</span></li>
             ))}
           </ul>
         </div>
-        <div>
-          <h4>负债分类汇总</h4>
-          <ul>
+        <div className="card p-4">
+          <h4 className="text-sm font-medium mb-2">负债分类汇总</h4>
+          <ul className="text-sm text-muted space-y-1">
             {summary.byLiabilityTypes.map((t) => (
-              <li key={t.label}>{t.label}: {t.total}</li>
+              <li key={t.label} className="flex justify-between"><span>{t.label}</span><span>{t.total}</span></li>
             ))}
           </ul>
         </div>
