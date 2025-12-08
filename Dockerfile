@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20 AS base
 WORKDIR /app
 ARG DATABASE_PROVIDER=postgresql
 ARG DATABASE_URL=postgresql://postgres:postgres@localhost:5432/assetdb
