@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Modal from '../components/ui/Modal';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Button from '../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
+import Button from '../../components/ui/Button';
 
 export default function AssetsPage() {
   const [items, setItems] = useState<any[]>([]);

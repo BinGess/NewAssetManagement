@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Modal from '../components/ui/Modal';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
 
 type TypeItem = { id: number; code: string; label: string; enabled: boolean; order: number };
 
