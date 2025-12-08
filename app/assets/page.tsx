@@ -8,6 +8,7 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   async function refresh() {
     try {
@@ -26,6 +27,7 @@ export default function AssetsPage() {
     setError(null);
     setSuccess(null);
     setLoading(true);
+    setFieldErrors({});
     const payload = {
       name: form.name,
       typeId: Number(form.typeId),
@@ -38,7 +40,14 @@ export default function AssetsPage() {
       setError('未登录，请先登录');
     } else if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      const msg = data?.errors?.formErrors?.join?.(', ') || Object.values(data?.errors?.fieldErrors || {}).flat().join(', ');
+      const fe = data?.errors?.fieldErrors || {};
+      const mapped: Record<string, string> = {};
+      Object.keys(fe).forEach((k) => {
+        const arr = fe[k];
+        if (Array.isArray(arr) && arr.length) mapped[k] = arr.join(', ');
+      });
+      setFieldErrors(mapped);
+      const msg = data?.errors?.formErrors?.join?.(', ') || Object.values(mapped).filter(Boolean).join(', ');
       setError(msg || '提交失败');
     } else {
       setSuccess('已添加');
@@ -52,21 +61,33 @@ export default function AssetsPage() {
     <div>
       <h2>资产列表</h2>
       <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 12 }}>
-        <input placeholder="名称" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <select required value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
+        <div>
+          <input placeholder="名称" required aria-invalid={!!fieldErrors.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          {fieldErrors.name && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.name}</div>}
+        </div>
+        <div>
+          <select required aria-invalid={!!fieldErrors.typeId} value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
           <option value="">类型</option>
           {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
-        </select>
+          </select>
+          {fieldErrors.typeId && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.typeId}</div>}
+        </div>
         {types.length === 0 && (
           <div style={{ gridColumn: '1 / -1', color: '#955' }}>
             暂无资产类型，请前往 <a href="/types">类型管理</a> 新增。
           </div>
         )}
-        <input type="number" step="0.01" placeholder="金额" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-        <input type="date" required value={form.valuationDate} onChange={(e) => setForm({ ...form, valuationDate: e.target.value })} />
+        <div>
+          <input type="number" step="0.01" placeholder="金额" required aria-invalid={!!fieldErrors.amount} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+          {fieldErrors.amount && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.amount}</div>}
+        </div>
+        <div>
+          <input type="date" required aria-invalid={!!fieldErrors.valuationDate} value={form.valuationDate} onChange={(e) => setForm({ ...form, valuationDate: e.target.value })} />
+          {fieldErrors.valuationDate && <div style={{ color: 'red', fontSize: 12 }}>{fieldErrors.valuationDate}</div>}
+        </div>
         <button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</button>
       </form>
-      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
+      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error} {error?.includes('未登录') && (<a href="/login" style={{ marginLeft: 8 }}>登录</a>)}</div>}
       {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}
       <table>
         <thead>
