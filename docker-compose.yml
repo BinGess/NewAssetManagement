@@ -13,7 +13,6 @@ services:
   web:
     build: .
     environment:
-      DATABASE_PROVIDER: postgresql
       DATABASE_URL: postgres://postgres:postgres@db:5432/assetdb
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
     depends_on:
