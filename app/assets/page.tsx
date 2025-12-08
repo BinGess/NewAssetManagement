@@ -10,9 +10,13 @@ export default function AssetsPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   async function refresh() {
-    const [resItems, resTypes] = await Promise.all([fetch('/api/assets'), fetch('/api/asset-types')]);
-    setItems(await resItems.json());
-    setTypes(await resTypes.json());
+    try {
+      const [resItems, resTypes] = await Promise.all([fetch('/api/assets'), fetch('/api/asset-types')]);
+      setItems(await resItems.json());
+      setTypes(await resTypes.json());
+    } catch (e) {
+      setError('加载失败，请检查网络或服务端');
+    }
   }
 
   useEffect(() => { refresh(); }, []);
@@ -45,14 +49,19 @@ export default function AssetsPage() {
     <div>
       <h2>资产列表</h2>
       <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 12 }}>
-        <input placeholder="名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <select value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
+        <input placeholder="名称" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <select required value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
           <option value="">类型</option>
           {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
         </select>
-        <input type="number" step="0.01" placeholder="金额" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-        <input type="date" value={form.valuationDate} onChange={(e) => setForm({ ...form, valuationDate: e.target.value })} />
-        <button type="submit" disabled={loading || !form.name || !form.typeId || !form.amount || !form.valuationDate}>{loading ? '提交中' : '添加'}</button>
+        {types.length === 0 && (
+          <div style={{ gridColumn: '1 / -1', color: '#955' }}>
+            暂无资产类型，请前往 <a href="/types">类型管理</a> 新增。
+          </div>
+        )}
+        <input type="number" step="0.01" placeholder="金额" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+        <input type="date" required value={form.valuationDate} onChange={(e) => setForm({ ...form, valuationDate: e.target.value })} />
+        <button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</button>
       </form>
       {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
       {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}

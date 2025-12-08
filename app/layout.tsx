@@ -10,6 +10,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <a href="/dashboard">概览</a>
             <a href="/assets">资产</a>
             <a href="/liabilities">负债</a>
+            <a href="/types">类型管理</a>
             <a href="/login">登录</a>
           </nav>
         </header>

@@ -10,9 +10,13 @@ export default function LiabilitiesPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   async function refresh() {
-    const [resItems, resTypes] = await Promise.all([fetch('/api/liabilities'), fetch('/api/liability-types')]);
-    setItems(await resItems.json());
-    setTypes(await resTypes.json());
+    try {
+      const [resItems, resTypes] = await Promise.all([fetch('/api/liabilities'), fetch('/api/liability-types')]);
+      setItems(await resItems.json());
+      setTypes(await resTypes.json());
+    } catch (e) {
+      setError('加载失败，请检查网络或服务端');
+    }
   }
 
   useEffect(() => { refresh(); }, []);
@@ -46,15 +50,20 @@ export default function LiabilitiesPage() {
     <div>
       <h2>负债列表</h2>
       <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 12 }}>
-        <input placeholder="名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <select value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
+        <input placeholder="名称" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <select required value={form.typeId} onChange={(e) => setForm({ ...form, typeId: e.target.value })}>
           <option value="">类型</option>
           {types.map((t: any) => <option value={t.id} key={t.id}>{t.label}</option>)}
         </select>
-        <input type="number" step="0.01" placeholder="金额" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+        {types.length === 0 && (
+          <div style={{ gridColumn: '1 / -1', color: '#955' }}>
+            暂无负债类型，请前往 <a href="/types">类型管理</a> 新增。
+          </div>
+        )}
+        <input type="number" step="0.01" placeholder="金额" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
         <input type="number" step="0.0001" placeholder="利率(可选)" value={form.interestRate} onChange={(e) => setForm({ ...form, interestRate: e.target.value })} />
         <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
-        <button type="submit" disabled={loading || !form.name || !form.typeId || !form.amount}>{loading ? '提交中' : '添加'}</button>
+        <button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</button>
       </form>
       {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
       {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}
