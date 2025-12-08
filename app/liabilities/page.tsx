@@ -34,10 +34,13 @@ export default function LiabilitiesPage() {
       currency: form.currency,
       dueDate: form.dueDate ? new Date(form.dueDate) : null,
     };
-    const res = await fetch('/api/liabilities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!res.ok) {
+    const res = await fetch('/api/liabilities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
+    if (res.status === 401) {
+      setError('未登录，请先登录');
+    } else if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(typeof data?.errors === 'string' ? data.errors : '提交失败，请检查输入或登录');
+      const msg = data?.errors?.formErrors?.join?.(', ') || Object.values(data?.errors?.fieldErrors || {}).flat().join(', ');
+      setError(msg || '提交失败');
     } else {
       setSuccess('已添加');
       setForm({ name: '', typeId: '', amount: '', interestRate: '', currency: 'CNY', dueDate: '' });
