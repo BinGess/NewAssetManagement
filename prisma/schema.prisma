@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+model AssetType {
+  id      Int     @id @default(autoincrement())
+  code    String  @unique
+  label   String
+  enabled Boolean @default(true)
+  order   Int     @default(0)
+  assets  Asset[]
+}
+
+model LiabilityType {
+  id        Int         @id @default(autoincrement())
+  code      String      @unique
+  label     String
+  enabled   Boolean     @default(true)
+  order     Int         @default(0)
+  liabilities Liability[]
+}
+
+model Asset {
+  id            Int       @id @default(autoincrement())
+  name          String
+  typeId        Int
+  type          AssetType @relation(fields: [typeId], references: [id])
+  amount        Decimal   @db.Decimal(18, 2)
+  currency      String    @default("CNY")
+  valuationDate DateTime
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Liability {
+  id          Int            @id @default(autoincrement())
+  name        String
+  typeId      Int
+  type        LiabilityType  @relation(fields: [typeId], references: [id])
+  amount      Decimal        @db.Decimal(18, 2)
+  interestRate Decimal?      @db.Decimal(8, 4)
+  dueDate     DateTime?
+  currency    String         @default("CNY")
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Snapshot {
+  id             Int      @id @default(autoincrement())
+  totalAssets    Decimal  @db.Decimal(18, 2)
+  totalLiabilities Decimal @db.Decimal(18, 2)
+  netWorth       Decimal  @db.Decimal(18, 2)
+  at             DateTime @default(now())
+}
