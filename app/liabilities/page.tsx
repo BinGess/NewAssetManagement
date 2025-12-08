@@ -126,9 +126,7 @@ export default function LiabilitiesPage() {
         </tbody>
       </table>
       </div>
-    </div>
-  );
-}
+
       <Modal open={!!editing} title="编辑负债" onClose={() => setEditing(null)}
         footer={<>
           <Button variant="default" onClick={() => setEditing(null)}>取消</Button>
@@ -143,7 +141,7 @@ export default function LiabilitiesPage() {
               dueDate: editing.dueDate ? new Date(editing.dueDate) : null,
               notes: editing.notes || '',
             };
-            const res = await fetch(`/api/liabilities/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
+          const res = await fetch(`/api/liabilities/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
             if (res.ok) { setEditing(null); await refresh(); setSuccess('已更新'); } else { setError('更新失败，检查输入或登录'); }
           }}>保存</Button>
         </>}>
@@ -167,3 +165,7 @@ export default function LiabilitiesPage() {
         </>}>
         <div className="text-sm text-muted">删除后不可恢复。</div>
       </Modal>
+
+    </div>
+  );
+}
