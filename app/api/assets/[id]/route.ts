@@ -5,6 +5,12 @@ import { prisma } from '../../../../lib/prisma';
 import { requireAuth } from '../../../../lib/auth';
 import { AssetUpdateSchema } from '../../../../lib/schemas';
 
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const item = await prisma.asset.findUnique({ where: { id: Number(params.id) }, include: { type: true } });
+  if (!item) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  return NextResponse.json(item);
+}
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const unauthorized = requireAuth(req);
   if (unauthorized) return unauthorized;

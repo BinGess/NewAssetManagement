@@ -50,3 +50,17 @@ export const TypeUpdateSchema = z.object({
   enabled: z.boolean().optional(),
   order: z.number().int().nonnegative().optional(),
 });
+
+export const HoldingCreateSchema = z.object({
+  name: z.string().min(1),
+  price: z.number().positive(),
+  quantity: z.number().positive(),
+  notes: z.string().optional(),
+});
+
+export const HoldingUpdateSchema = z.object({
+  name: z.string().min(1),
+  price: z.number().positive(),
+  quantity: z.number().positive(),
+  notes: z.string().optional(),
+});

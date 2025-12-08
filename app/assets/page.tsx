@@ -108,7 +108,7 @@ export default function AssetsPage() {
             )}
             {items.map((it) => (
               <tr key={it.id}>
-                <td>{it.name}</td>
+                <td><a href={`/assets/${it.id}`} className="text-primary">{it.name}</a></td>
                 <td>{it.type?.label}</td>
                 <td>{Number(it.amount).toFixed(2)}</td>
                 <td>{it.currency}</td>

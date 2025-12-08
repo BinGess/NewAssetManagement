@@ -36,6 +36,7 @@ model Asset {
   notes         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  holdings      AssetHolding[]
 }
 
 model Liability {
@@ -58,4 +59,18 @@ model Snapshot {
   totalLiabilities Decimal @db.Decimal(18, 2)
   netWorth       Decimal  @db.Decimal(18, 2)
   at             DateTime @default(now())
+}
+
+model AssetHolding {
+  id        Int      @id @default(autoincrement())
+  assetId   Int
+  asset     Asset    @relation(fields: [assetId], references: [id])
+  name      String
+  price     Decimal  @db.Decimal(18, 4)
+  quantity  Decimal  @db.Decimal(18, 4)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetId])
 }
