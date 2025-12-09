@@ -37,6 +37,7 @@ model Asset {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   holdings      AssetHolding[]
+  changes       AssetChange[]
 }
 
 model Liability {
@@ -73,4 +74,19 @@ model AssetHolding {
   updatedAt DateTime @updatedAt
 
   @@index([assetId])
+}
+
+model AssetChange {
+  id           Int      @id @default(autoincrement())
+  assetId      Int
+  asset        Asset    @relation(fields: [assetId], references: [id])
+  beforeAmount Decimal  @db.Decimal(18, 2)
+  afterAmount  Decimal  @db.Decimal(18, 2)
+  diff         Decimal  @db.Decimal(18, 2)
+  at           DateTime @default(now())
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([assetId, at])
 }

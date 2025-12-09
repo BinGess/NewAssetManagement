@@ -64,3 +64,9 @@ export const HoldingUpdateSchema = z.object({
   quantity: z.number().positive(),
   notes: z.string().optional(),
 });
+
+export const AssetChangeCreateSchema = z.object({
+  beforeAmount: z.number(),
+  afterAmount: z.number(),
+  notes: z.string().optional(),
+});

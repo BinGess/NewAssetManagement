@@ -14,12 +14,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const unauthorized = requireAuth(req);
   if (unauthorized) return unauthorized;
+  const prev = await prisma.asset.findUnique({ where: { id: Number(params.id) } });
   const json = await req.json();
   const parsed = AssetUpdateSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 });
   }
   const updated = await prisma.asset.update({ where: { id: Number(params.id) }, data: parsed.data });
+  if (prev && prev.amount !== undefined) {
+    const before = Number(prev.amount);
+    const after = Number(parsed.data.amount);
+    if (!Number.isNaN(before) && !Number.isNaN(after) && before !== after) {
+      await prisma.assetChange.create({ data: { assetId: Number(params.id), beforeAmount: before, afterAmount: after, diff: after - before, notes: parsed.data.notes || undefined } });
+    }
+  }
   return NextResponse.json(updated);
 }
 
