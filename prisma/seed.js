@@ -46,6 +46,19 @@ async function main() {
       create: { code: t.code, label: t.label, order: i },
     });
   }
+
+  const persons = [
+    { name: '白斌' },
+    { name: '依依' },
+  ];
+
+  for (const p of persons) {
+    await prisma.person.upsert({
+      where: { name: p.name },
+      update: { enabled: true },
+      create: { name: p.name },
+    });
+  }
 }
 
 main()

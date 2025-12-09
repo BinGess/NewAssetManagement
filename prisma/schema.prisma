@@ -90,3 +90,35 @@ model AssetChange {
 
   @@index([assetId, at])
 }
+
+model Person {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expenses  Expense[]
+}
+
+enum ExpenseCycle {
+  daily
+  weekly
+  monthly
+  yearly
+}
+
+model Expense {
+  id        Int           @id @default(autoincrement())
+  name      String
+  amount    Decimal       @db.Decimal(18, 2)
+  cycle     ExpenseCycle
+  personId  Int
+  person    Person        @relation(fields: [personId], references: [id])
+  date      DateTime
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([personId])
+  @@index([date])
+}
