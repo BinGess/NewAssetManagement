@@ -17,20 +17,52 @@ export default function ExpensesPage() {
   const [editing, setEditing] = useState<any | null>(null);
   const [deleting, setDeleting] = useState<any | null>(null);
   const [sort, setSort] = useState<{ field: 'name' | 'cycle' | 'amount' | 'date'; dir: 'asc' | 'desc' }>({ field: 'date', dir: 'desc' });
-  const monthlyOverview = useMemo(() => {
-    let monthly = 0; let yearly = 0;
-    for (const it of items) {
-      const amt = Number(it.amount) || 0;
-      if (it.cycle === 'monthly') monthly += amt;
-      else if (it.cycle === 'yearly') yearly += amt;
-    }
-    return monthly + yearly / 12;
-  }, [items]);
   const [filterPersonId, setFilterPersonId] = useState<string>('');
   const [filterCycle, setFilterCycle] = useState<string>('');
   const [filterName, setFilterName] = useState<string>('');
   const [filterStart, setFilterStart] = useState<string>('');
   const [filterEnd, setFilterEnd] = useState<string>('');
+
+  const filteredItems = useMemo(() => {
+    const startTs = filterStart ? new Date(filterStart).getTime() : -Infinity;
+    const endTs = filterEnd ? new Date(filterEnd).getTime() : Infinity;
+    const pid = filterPersonId ? Number(filterPersonId) : null;
+    const cyc = filterCycle || null;
+    const nameQ = filterName || '';
+    return items.filter(it => {
+      const okPerson = pid ? it.personId === pid : true;
+      const okCycle = cyc ? it.cycle === cyc : true;
+      const okName = nameQ ? String(it.name || '').includes(nameQ) : true;
+      const ts = it.date ? new Date(it.date).getTime() : -Infinity;
+      const okStart = ts >= startTs;
+      const okEnd = ts <= endTs;
+      return okPerson && okCycle && okName && okStart && okEnd;
+    });
+  }, [items, filterPersonId, filterCycle, filterName, filterStart, filterEnd]);
+
+  const sortedItems = useMemo(() => {
+    const arr = [...filteredItems];
+    arr.sort((a, b) => {
+      let va: any; let vb: any;
+      if (sort.field === 'name') { va = a.name || ''; vb = b.name || ''; return sort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va)); }
+      if (sort.field === 'cycle') { va = a.cycle || ''; vb = b.cycle || ''; return sort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va)); }
+      if (sort.field === 'amount') { va = Number(a.amount) || 0; vb = Number(b.amount) || 0; return sort.dir === 'asc' ? va - vb : vb - va; }
+      va = a.date ? new Date(a.date).getTime() : -Infinity;
+      vb = b.date ? new Date(b.date).getTime() : -Infinity;
+      return sort.dir === 'asc' ? va - vb : vb - va;
+    });
+    return arr;
+  }, [filteredItems, sort]);
+
+  const monthlyOverview = useMemo(() => {
+    let monthly = 0; let yearly = 0;
+    for (const it of filteredItems) {
+      const amt = Number(it.amount) || 0;
+      if (it.cycle === 'monthly') monthly += amt;
+      else if (it.cycle === 'yearly') yearly += amt;
+    }
+    return monthly + yearly / 12;
+  }, [filteredItems]);
 
   async function refresh() {
     const [resItems, resPersons] = await Promise.all([fetch('/api/expenses'), fetch('/api/persons')]);
@@ -121,33 +153,7 @@ export default function ExpensesPage() {
             </tr>
           </thead>
           <tbody>
-            {useMemo(() => {
-              const arr = [...items];
-              const startTs = filterStart ? new Date(filterStart).getTime() : -Infinity;
-              const endTs = filterEnd ? new Date(filterEnd).getTime() : Infinity;
-              const pid = filterPersonId ? Number(filterPersonId) : null;
-              const cyc = filterCycle || null;
-              const nameQ = filterName || '';
-              const filtered = arr.filter(it => {
-                const okPerson = pid ? it.personId === pid : true;
-                const okCycle = cyc ? it.cycle === cyc : true;
-                const okName = nameQ ? String(it.name || '').includes(nameQ) : true;
-                const ts = it.date ? new Date(it.date).getTime() : -Infinity;
-                const okStart = ts >= startTs;
-                const okEnd = ts <= endTs;
-                return okPerson && okCycle && okName && okStart && okEnd;
-              });
-              filtered.sort((a, b) => {
-                let va: any; let vb: any;
-                if (sort.field === 'name') { va = a.name || ''; vb = b.name || ''; return sort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va)); }
-                if (sort.field === 'cycle') { va = a.cycle || ''; vb = b.cycle || ''; return sort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va)); }
-                if (sort.field === 'amount') { va = Number(a.amount) || 0; vb = Number(b.amount) || 0; return sort.dir === 'asc' ? va - vb : vb - va; }
-                va = a.date ? new Date(a.date).getTime() : -Infinity;
-                vb = b.date ? new Date(b.date).getTime() : -Infinity;
-                return sort.dir === 'asc' ? va - vb : vb - va;
-              });
-              return filtered;
-            }, [items, sort, filterPersonId, filterCycle, filterName, filterStart, filterEnd]).map((it) => (
+            {sortedItems.map((it) => (
               <tr key={it.id}>
                 <td><a href={`/expenses/${it.id}`} className="text-primary">{it.name}</a></td>
                 <td>{it.cycle}</td>
