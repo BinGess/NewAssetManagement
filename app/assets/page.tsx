@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -15,6 +15,7 @@ export default function AssetsPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<any | null>(null);
   const [deleting, setDeleting] = useState<any | null>(null);
+  const [sort, setSort] = useState<{ field: 'name' | 'type' | 'amount' | 'date'; dir: 'asc' | 'desc' }>({ field: 'date', dir: 'desc' });
 
   async function refresh() {
     try {
@@ -99,14 +100,31 @@ export default function AssetsPage() {
         <table className="table">
           <thead>
             <tr>
-              <th>名称</th><th>类型</th><th>金额</th><th>币种</th><th>估值日期</th><th>操作</th>
+              <th className="cursor-pointer" onClick={() => setSort(s => s.field === 'name' ? { field: 'name', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field: 'name', dir: 'asc' })}>名称 {sort.field === 'name' ? (sort.dir === 'asc' ? '▲' : '▼') : ''}</th>
+              <th className="cursor-pointer" onClick={() => setSort(s => s.field === 'type' ? { field: 'type', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field: 'type', dir: 'asc' })}>类型 {sort.field === 'type' ? (sort.dir === 'asc' ? '▲' : '▼') : ''}</th>
+              <th className="cursor-pointer" onClick={() => setSort(s => s.field === 'amount' ? { field: 'amount', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field: 'amount', dir: 'asc' })}>金额 {sort.field === 'amount' ? (sort.dir === 'asc' ? '▲' : '▼') : ''}</th>
+              <th>币种</th>
+              <th className="cursor-pointer" onClick={() => setSort(s => s.field === 'date' ? { field: 'date', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field: 'date', dir: 'asc' })}>估值日期 {sort.field === 'date' ? (sort.dir === 'asc' ? '▲' : '▼') : ''}</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 && (
               <tr><td className="text-muted" colSpan={5}>暂无数据</td></tr>
             )}
-            {items.map((it) => (
+            {useMemo(() => {
+              const arr = [...items];
+              arr.sort((a, b) => {
+                let va: any; let vb: any;
+                if (sort.field === 'name') { va = a.name || ''; vb = b.name || ''; return sort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va)); }
+                if (sort.field === 'type') { va = a.type?.label || ''; vb = b.type?.label || ''; return sort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va)); }
+                if (sort.field === 'amount') { va = Number(a.amount) || 0; vb = Number(b.amount) || 0; return sort.dir === 'asc' ? va - vb : vb - va; }
+                va = a.valuationDate ? new Date(a.valuationDate).getTime() : -Infinity;
+                vb = b.valuationDate ? new Date(b.valuationDate).getTime() : -Infinity;
+                return sort.dir === 'asc' ? va - vb : vb - va;
+              });
+              return arr;
+            }, [items, sort]).map((it) => (
               <tr key={it.id}>
                 <td><a href={`/assets/${it.id}`} className="text-primary">{it.name}</a></td>
                 <td>{it.type?.label}</td>
