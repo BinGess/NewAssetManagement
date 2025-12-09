@@ -66,7 +66,7 @@ export default function ExpensesPage() {
       <Card className="p-4">
         <div className="text-sm">每月固定开支：{formatAmount(monthlyOverview)} 元</div>
       </Card>
-      <Card className="p-4">
+      {/* <Card className="p-4">
         <div className="grid md:grid-cols-5 gap-3">
           <select className="select" value={filterPersonId} onChange={(e) => setFilterPersonId(e.target.value)}>
             <option value="">所属人(全部)</option>
@@ -86,7 +86,7 @@ export default function ExpensesPage() {
             <Button variant="default" onClick={() => { setFilterPersonId(''); setFilterCycle(''); setFilterName(''); setFilterStart(''); setFilterEnd(''); }}>重置筛选</Button>
           </div>
         </div>
-      </Card>
+      </Card> */}
       <Card className="p-4">
         <form onSubmit={onSubmit} className="grid md:grid-cols-6 gap-3">
           <Input placeholder="名称" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
