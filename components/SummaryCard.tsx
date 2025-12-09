@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { formatAmount } from '../lib/format';
 
 type Summary = {
   totalAssets: string;
@@ -28,15 +29,15 @@ export function SummaryCard() {
       <div className="grid grid-cols-3 gap-4">
         <div className="card p-4">
           <div className="text-sm text-muted">总资产</div>
-          <div className="text-xl font-semibold mt-1">{summary.totalAssets}</div>
+          <div className="text-xl font-semibold mt-1">{formatAmount(Number(summary.totalAssets))}</div>
         </div>
         <div className="card p-4">
           <div className="text-sm text-muted">总负债</div>
-          <div className="text-xl font-semibold mt-1">{summary.totalLiabilities}</div>
+          <div className="text-xl font-semibold mt-1">{formatAmount(Number(summary.totalLiabilities))}</div>
         </div>
         <div className="card p-4">
           <div className="text-sm text-muted">净值</div>
-          <div className="text-xl font-semibold mt-1">{summary.netWorth}</div>
+          <div className="text-xl font-semibold mt-1">{formatAmount(Number(summary.netWorth))}</div>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -44,7 +45,7 @@ export function SummaryCard() {
           <h4 className="text-sm font-medium mb-2">资产分类汇总</h4>
           <ul className="text-sm text-muted space-y-1">
             {summary.byAssetTypes.map((t) => (
-              <li key={t.label} className="flex justify-between"><span>{t.label}</span><span>{t.total}</span></li>
+              <li key={t.label} className="flex justify-between"><span>{t.label}</span><span>{formatAmount(Number(t.total))}</span></li>
             ))}
           </ul>
         </div>
@@ -52,7 +53,7 @@ export function SummaryCard() {
           <h4 className="text-sm font-medium mb-2">负债分类汇总</h4>
           <ul className="text-sm text-muted space-y-1">
             {summary.byLiabilityTypes.map((t) => (
-              <li key={t.label} className="flex justify-between"><span>{t.label}</span><span>{t.total}</span></li>
+              <li key={t.label} className="flex justify-between"><span>{t.label}</span><span>{formatAmount(Number(t.total))}</span></li>
             ))}
           </ul>
         </div>

@@ -4,6 +4,7 @@ import Card from '../../../components/ui/Card';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Modal from '../../../components/ui/Modal';
+import { formatAmount } from '../../../lib/format';
 
 type Asset = { id: number; name: string; typeId: number; amount: number; currency: string; valuationDate: string; type?: { code: string; label: string } };
 type Holding = { id: number; name: string; price: number; quantity: number; notes?: string };
@@ -76,7 +77,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
             <div><div className="text-muted">名称</div><div className="font-medium">{asset.name}</div></div>
             <div><div className="text-muted">类型</div><div className="font-medium">{asset.type?.label}</div></div>
             <div><div className="text-muted">币种</div><div className="font-medium">{asset.currency}</div></div>
-            <div><div className="text-muted">基础金额</div><div className="font-medium">{Number(asset.amount).toFixed(2)}</div></div>
+            <div><div className="text-muted">基础金额</div><div className="font-medium">{formatAmount(Number(asset.amount))}</div></div>
             <div><div className="text-muted">估值日期</div><div className="font-medium">{new Date(asset.valuationDate).toLocaleDateString()}</div></div>
             <div className="col-span-3 flex gap-2">
               <button className="btn btn-default" onClick={() => setAssetEditing(asset!)}>编辑资产</button>
@@ -90,7 +91,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm font-medium">持仓管理</div>
-            <div className="text-sm text-muted">持仓总价值：{totalValue.toFixed(2)}</div>
+            <div className="text-sm text-muted">持仓总价值：{formatAmount(totalValue)}</div>
           </div>
           <form onSubmit={onAdd} className="grid md:grid-cols-4 gap-3 mb-3">
             <Input placeholder="名称" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -111,7 +112,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
                   <td>{h.name}</td>
                   <td>{Number(h.price).toFixed(4)}</td>
                   <td>{Number(h.quantity).toFixed(4)}</td>
-                  <td>{(Number(h.price) * Number(h.quantity)).toFixed(2)}</td>
+                  <td>{formatAmount(Number(h.price) * Number(h.quantity))}</td>
                   <td>{h.notes || '-'}</td>
                   <td>
                     <button className="btn btn-default px-2 py-1 mr-2" onClick={() => setEditing(h)}>编辑</button>

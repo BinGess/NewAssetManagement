@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { formatAmount } from '../../lib/format';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -28,6 +29,15 @@ export default function LiabilitiesPage() {
   }
 
   useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem('liabilities_sort');
+      if (s) setSort(JSON.parse(s));
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('liabilities_sort', JSON.stringify(sort)); } catch {}
+  }, [sort]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -132,7 +142,7 @@ export default function LiabilitiesPage() {
             <tr key={it.id}>
               <td>{it.name}</td>
               <td>{it.type?.label}</td>
-              <td>{Number(it.amount).toFixed(2)}</td>
+              <td>{formatAmount(Number(it.amount))}</td>
               <td>{it.interestRate ? Number(it.interestRate).toFixed(4) : '-'}</td>
               <td>{it.currency}</td>
               <td>{it.dueDate ? new Date(it.dueDate).toLocaleDateString() : '-'}</td>

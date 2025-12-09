@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { formatAmount } from '../../lib/format';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -28,6 +29,15 @@ export default function AssetsPage() {
   }
 
   useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem('assets_sort');
+      if (s) setSort(JSON.parse(s));
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('assets_sort', JSON.stringify(sort)); } catch {}
+  }, [sort]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -128,7 +138,7 @@ export default function AssetsPage() {
               <tr key={it.id}>
                 <td><a href={`/assets/${it.id}`} className="text-primary">{it.name}</a></td>
                 <td>{it.type?.label}</td>
-                <td>{Number(it.amount).toFixed(2)}</td>
+                <td>{formatAmount(Number(it.amount))}</td>
                 <td>{it.currency}</td>
                 <td>{new Date(it.valuationDate).toLocaleDateString()}</td>
                 <td>

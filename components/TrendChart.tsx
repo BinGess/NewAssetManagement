@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import * as echarts from 'echarts';
 import Card from './ui/Card';
+import { formatAmount } from '../lib/format';
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false });
 
@@ -27,7 +28,7 @@ export default function TrendChart() {
     const totals = (points || []).map((p) => p.totalAssets);
     return {
       grid: { left: 24, right: 24, top: 16, bottom: 24 },
-      tooltip: { trigger: 'axis', valueFormatter: (v: number) => v.toFixed(2) },
+      tooltip: { trigger: 'axis', valueFormatter: (v: number) => formatAmount(Number(v)) },
       xAxis: { type: 'category', data: dates, axisLine: { lineStyle: { color: '#e5e7eb' } }, axisLabel: { color: '#6b7280' } },
       yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#e5e7eb' } }, axisLabel: { color: '#6b7280' } },
       series: [
