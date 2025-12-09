@@ -17,6 +17,15 @@ export default function ExpensesPage() {
   const [editing, setEditing] = useState<any | null>(null);
   const [deleting, setDeleting] = useState<any | null>(null);
   const [sort, setSort] = useState<{ field: 'name' | 'cycle' | 'amount' | 'date'; dir: 'asc' | 'desc' }>({ field: 'date', dir: 'desc' });
+  const monthlyOverview = useMemo(() => {
+    let monthly = 0; let yearly = 0;
+    for (const it of items) {
+      const amt = Number(it.amount) || 0;
+      if (it.cycle === 'monthly') monthly += amt;
+      else if (it.cycle === 'yearly') yearly += amt;
+    }
+    return monthly + yearly / 12;
+  }, [items]);
   const [filterPersonId, setFilterPersonId] = useState<string>('');
   const [filterCycle, setFilterCycle] = useState<string>('');
   const [filterName, setFilterName] = useState<string>('');
@@ -54,6 +63,9 @@ export default function ExpensesPage() {
       <h2 className="text-xl font-semibold">固定支出</h2>
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+      <Card className="p-4">
+        <div className="text-sm">每月固定开支：{formatAmount(monthlyOverview)} 元</div>
+      </Card>
       <Card className="p-4">
         <div className="grid md:grid-cols-5 gap-3">
           <select className="select" value={filterPersonId} onChange={(e) => setFilterPersonId(e.target.value)}>
