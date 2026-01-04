@@ -1,11 +1,13 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -16,8 +18,13 @@ export default function LoginPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
+      credentials: 'same-origin',
     });
-    if (res.ok) setMsg('登录成功'); else setMsg('登录失败');
+    if (res.ok) {
+      router.replace('/dashboard');
+    } else {
+      setMsg('登录失败');
+    }
   }
 
   return (
