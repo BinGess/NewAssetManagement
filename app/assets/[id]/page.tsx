@@ -7,12 +7,13 @@ import Modal from '../../../components/ui/Modal';
 import { formatAmount } from '../../../lib/format';
 
 type Asset = { id: number; name: string; typeId: number; amount: number; currency: string; valuationDate: string; type?: { code: string; label: string } };
+type FundAsset = Asset & { annualRate?: number; startDate?: string };
 type Holding = { id: number; name: string; price: number; quantity: number; notes?: string };
 type Change = { id: number; beforeAmount: number; afterAmount: number; diff: number; at: string; notes?: string };
 
 export default function AssetDetailPage({ params }: { params: { id: string } }) {
   const assetId = Number(params.id);
-  const [asset, setAsset] = useState<Asset | null>(null);
+  const [asset, setAsset] = useState<FundAsset | null>(null);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [changes, setChanges] = useState<Change[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
   const [assetEditing, setAssetEditing] = useState<Asset | null>(null);
   const [assetDeleting, setAssetDeleting] = useState<boolean>(false);
   const [types, setTypes] = useState<{ id: number; label: string }[]>([]);
+  const [fundForm, setFundForm] = useState<{ annualRate: string; startDate: string }>({ annualRate: '', startDate: '' });
 
   async function refresh() {
     setError(null);
@@ -42,8 +44,35 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
 
   useEffect(() => { refresh(); }, [assetId]);
 
+  useEffect(() => {
+    if (asset) {
+      setFundForm({
+        annualRate: asset.annualRate !== undefined && asset.annualRate !== null ? String(asset.annualRate) : '',
+        startDate: asset.startDate?.slice?.(0, 10) || '',
+      });
+    }
+  }, [asset]);
+
   const totalValue = holdings.reduce((sum, x) => sum + Number(x.price) * Number(x.quantity), 0);
   const isStockOrFund = asset?.type?.code === 'stock' || asset?.type?.code === 'fund';
+  const isFund = asset?.type?.code === 'fund';
+
+  const amount = Number(asset?.amount) || 0;
+  const rate = (() => {
+    const v = fundForm.annualRate?.trim();
+    if (v) return Number(v);
+    return asset?.annualRate ? Number(asset.annualRate) : 0;
+  })();
+  const startDateStr = fundForm.startDate || (asset?.startDate || '');
+  const daysElapsed = (() => {
+    if (!startDateStr) return 0;
+    const ms = Date.now() - new Date(startDateStr).getTime();
+    return ms > 0 ? Math.floor(ms / 86400000) : 0;
+  })();
+  const daily = amount * rate / 365;
+  const monthly = amount * rate / 12;
+  const yearly = amount * rate;
+  const cumulative = amount * rate * daysElapsed / 365;
 
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -79,6 +108,12 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
             <div><div className="text-muted">币种</div><div className="font-medium">{asset.currency}</div></div>
             <div><div className="text-muted">基础金额</div><div className="font-medium">{formatAmount(Number(asset.amount))}</div></div>
             <div><div className="text-muted">估值日期</div><div className="font-medium">{new Date(asset.valuationDate).toLocaleDateString()}</div></div>
+            {isFund && (
+              <>
+                <div><div className="text-muted">年化利率</div><div className="font-medium">{asset.annualRate !== undefined && asset.annualRate !== null ? Number(asset.annualRate).toFixed(4) : '-'}</div></div>
+                <div><div className="text-muted">起始日期</div><div className="font-medium">{asset.startDate ? new Date(asset.startDate).toLocaleDateString() : '-'}</div></div>
+              </>
+            )}
             <div className="col-span-3 flex gap-2">
               <button className="btn btn-default" onClick={() => setAssetEditing(asset!)}>编辑资产</button>
               <button className="btn btn-default" onClick={() => setAssetDeleting(true)}>删除资产</button>
@@ -86,6 +121,32 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
           </div>
         ) : <div className="text-sm text-muted">加载中...</div>}
       </Card>
+
+      {isFund && (
+        <Card className="p-4">
+          <div className="text-sm font-medium mb-3">货币基金信息</div>
+          <div className="grid md:grid-cols-3 gap-3 mb-3">
+            <Input type="number" step="0.0001" placeholder="年化利率(小数，例如0.03)" value={fundForm.annualRate} onChange={(e) => setFundForm({ ...fundForm, annualRate: e.target.value })} />
+            <Input type="date" placeholder="起始日期" value={fundForm.startDate} onChange={(e) => setFundForm({ ...fundForm, startDate: e.target.value })} />
+          </div>
+          <Button onClick={async () => {
+            if (!asset) return;
+            setError(null); setSuccess(null);
+            const payload = {
+              name: asset.name,
+              typeId: asset.typeId,
+              amount: Number(asset.amount),
+              currency: asset.currency,
+              valuationDate: new Date(asset.valuationDate),
+              annualRate: fundForm.annualRate ? Number(fundForm.annualRate) : undefined,
+              startDate: fundForm.startDate ? new Date(fundForm.startDate) : undefined,
+              notes: undefined,
+            };
+            const res = await fetch(`/api/assets/${assetId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
+            if (res.ok) { setSuccess('基金信息已保存'); await refresh(); } else { setError('保存失败，请检查输入或登录'); }
+          }}>保存基金信息</Button>
+        </Card>
+      )}
 
       {isStockOrFund ? (
         <Card className="p-4">
@@ -125,6 +186,22 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         </Card>
       ) : (
         <Card className="p-4"><div className="text-sm text-muted">该资产类型不支持持仓管理。</div></Card>
+      )}
+
+      {isFund && (
+        <Card className="p-4">
+          <div className="text-sm font-medium mb-3">收益概览</div>
+          {(rate && startDateStr) ? (
+            <div className="grid md:grid-cols-4 gap-4 text-sm">
+              <div><div className="text-muted">每日收益</div><div className="font-medium">{daily.toFixed(2)} {asset?.currency}</div></div>
+              <div><div className="text-muted">每月收益</div><div className="font-medium">{monthly.toFixed(2)} {asset?.currency}</div></div>
+              <div><div className="text-muted">每年收益</div><div className="font-medium">{yearly.toFixed(2)} {asset?.currency}</div></div>
+              <div><div className="text-muted">累计收益</div><div className="font-medium">{cumulative.toFixed(2)} {asset?.currency}</div></div>
+            </div>
+          ) : (
+            <div className="text-sm text-muted">请填写年化利率与起始日期以计算收益。</div>
+          )}
+        </Card>
       )}
 
       <Card className="p-4">

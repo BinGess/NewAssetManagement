@@ -6,6 +6,8 @@ export const AssetCreateSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().min(1),
   valuationDate: z.preprocess((v) => new Date(v as string), z.date()),
+  annualRate: z.number().nonnegative().optional(),
+  startDate: z.preprocess((v) => (v ? new Date(v as string) : undefined), z.date().optional()),
   notes: z.string().optional(),
 });
 
@@ -25,6 +27,8 @@ export const AssetUpdateSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().min(1),
   valuationDate: z.preprocess((v) => new Date(v as string), z.date()),
+  annualRate: z.number().nonnegative().optional(),
+  startDate: z.preprocess((v) => (v ? new Date(v as string) : undefined), z.date().optional()),
   notes: z.string().optional(),
 });
 

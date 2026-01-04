@@ -33,6 +33,8 @@ model Asset {
   amount        Decimal   @db.Decimal(18, 2)
   currency      String    @default("CNY")
   valuationDate DateTime
+  annualRate    Decimal?  @db.Decimal(8, 4)
+  startDate     DateTime?
   notes         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
