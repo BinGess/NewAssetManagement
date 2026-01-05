@@ -55,7 +55,11 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
 
   const totalValue = holdings.reduce((sum, x) => sum + Number(x.price) * Number(x.quantity), 0);
   const isStockOrFund = asset?.type?.code === 'stock' || asset?.type?.code === 'fund';
-  const isFund = asset?.type?.code === 'fund';
+  const isMoneyFund = (() => {
+    const code = asset?.type?.code?.toLowerCase?.() || '';
+    const label = asset?.type?.label || '';
+    return code === 'huobi' || code === 'money_fund' || label.includes('货币基金');
+  })();
 
   const amount = Number(asset?.amount) || 0;
   const rate = (() => {
@@ -108,7 +112,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
             <div><div className="text-muted">币种</div><div className="font-medium">{asset.currency}</div></div>
             <div><div className="text-muted">基础金额</div><div className="font-medium">{formatAmount(Number(asset.amount))}</div></div>
             <div><div className="text-muted">估值日期</div><div className="font-medium">{new Date(asset.valuationDate).toLocaleDateString()}</div></div>
-            {isFund && (
+            {isMoneyFund && (
               <>
                 <div><div className="text-muted">年化利率</div><div className="font-medium">{asset.annualRate !== undefined && asset.annualRate !== null ? Number(asset.annualRate).toFixed(4) : '-'}</div></div>
                 <div><div className="text-muted">起始日期</div><div className="font-medium">{asset.startDate ? new Date(asset.startDate).toLocaleDateString() : '-'}</div></div>
@@ -122,7 +126,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         ) : <div className="text-sm text-muted">加载中...</div>}
       </Card>
 
-      {isFund && (
+      {isMoneyFund && (
         <Card className="p-4">
           <div className="text-sm font-medium mb-3">货币基金信息</div>
           <div className="grid md:grid-cols-3 gap-3 mb-3">
@@ -188,7 +192,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         <Card className="p-4"><div className="text-sm text-muted">该资产类型不支持持仓管理。</div></Card>
       )}
 
-      {isFund && (
+      {isMoneyFund && (
         <Card className="p-4">
           <div className="text-sm font-medium mb-3">收益概览</div>
           {(rate && startDateStr) ? (

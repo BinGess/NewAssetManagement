@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 });
   }
-  const created = await prisma.assetType.create({ data: parsed.data });
+  const maxOrder = await prisma.assetType.aggregate({ _max: { order: true } });
+  const created = await prisma.assetType.create({
+    data: {
+      ...parsed.data,
+      order: (maxOrder._max.order ?? 0) + 1,
+    },
+  });
   return NextResponse.json(created);
 }
