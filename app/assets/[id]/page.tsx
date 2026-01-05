@@ -22,10 +22,10 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
   const [form, setForm] = useState({ name: '', price: '', quantity: '', notes: '' });
   const [editing, setEditing] = useState<Holding | null>(null);
   const [deleting, setDeleting] = useState<Holding | null>(null);
-  const [assetEditing, setAssetEditing] = useState<Asset | null>(null);
+  const [assetEditing, setAssetEditing] = useState<FundAsset | null>(null);
   const [assetDeleting, setAssetDeleting] = useState<boolean>(false);
   const [types, setTypes] = useState<{ id: number; label: string }[]>([]);
-  const [fundForm, setFundForm] = useState<{ annualRate: string; startDate: string }>({ annualRate: '', startDate: '' });
+  
 
   async function refresh() {
     setError(null);
@@ -44,14 +44,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
 
   useEffect(() => { refresh(); }, [assetId]);
 
-  useEffect(() => {
-    if (asset) {
-      setFundForm({
-        annualRate: asset.annualRate !== undefined && asset.annualRate !== null ? String(asset.annualRate) : '',
-        startDate: asset.startDate?.slice?.(0, 10) || '',
-      });
-    }
-  }, [asset]);
+  // 货币基金信息移入编辑资产弹窗，收益概览直接使用已保存数据
 
   const totalValue = holdings.reduce((sum, x) => sum + Number(x.price) * Number(x.quantity), 0);
   const isStockOrFund = asset?.type?.code === 'stock' || asset?.type?.code === 'fund';
@@ -62,12 +55,8 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
   })();
 
   const amount = Number(asset?.amount) || 0;
-  const rate = (() => {
-    const v = fundForm.annualRate?.trim();
-    if (v) return Number(v);
-    return asset?.annualRate ? Number(asset.annualRate) : 0;
-  })();
-  const startDateStr = fundForm.startDate || (asset?.startDate || '');
+  const rate = asset?.annualRate ? Number(asset.annualRate) : 0;
+  const startDateStr = asset?.startDate || '';
   const daysElapsed = (() => {
     if (!startDateStr) return 0;
     const ms = Date.now() - new Date(startDateStr).getTime();
@@ -126,71 +115,9 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         ) : <div className="text-sm text-muted">加载中...</div>}
       </Card>
 
-      {isMoneyFund && (
-        <Card className="p-4">
-          <div className="text-sm font-medium mb-3">货币基金信息</div>
-          <div className="grid md:grid-cols-3 gap-3 mb-3">
-            <Input type="number" step="0.0001" placeholder="年化利率(小数，例如0.03)" value={fundForm.annualRate} onChange={(e) => setFundForm({ ...fundForm, annualRate: e.target.value })} />
-            <Input type="date" placeholder="起始日期" value={fundForm.startDate} onChange={(e) => setFundForm({ ...fundForm, startDate: e.target.value })} />
-          </div>
-          <Button onClick={async () => {
-            if (!asset) return;
-            setError(null); setSuccess(null);
-            const payload = {
-              name: asset.name,
-              typeId: asset.typeId,
-              amount: Number(asset.amount),
-              currency: asset.currency,
-              valuationDate: new Date(asset.valuationDate),
-              annualRate: fundForm.annualRate ? Number(fundForm.annualRate) : undefined,
-              startDate: fundForm.startDate ? new Date(fundForm.startDate) : undefined,
-              notes: undefined,
-            };
-            const res = await fetch(`/api/assets/${assetId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
-            if (res.ok) { setSuccess('基金信息已保存'); await refresh(); } else { setError('保存失败，请检查输入或登录'); }
-          }}>保存基金信息</Button>
-        </Card>
-      )}
+      {/* 货币基金信息输入已移入编辑资产弹窗 */}
 
-      {isStockOrFund ? (
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-medium">持仓管理</div>
-            <div className="text-sm text-muted">持仓总价值：{formatAmount(totalValue)}</div>
-          </div>
-          <form onSubmit={onAdd} className="grid md:grid-cols-4 gap-3 mb-3">
-            <Input placeholder="名称" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <Input type="number" step="0.0001" placeholder="价格" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-            <Input type="number" step="0.0001" placeholder="数量" required value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
-            <Input placeholder="备注(可选)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-            <Button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</Button>
-          </form>
-
-          <table className="table">
-            <thead>
-              <tr><th>名称</th><th>价格</th><th>数量</th><th>小计</th><th>备注</th><th>操作</th></tr>
-            </thead>
-            <tbody>
-              {holdings.length === 0 && (<tr><td className="text-muted" colSpan={6}>暂无持仓</td></tr>)}
-              {holdings.map(h => (
-                <tr key={h.id}>
-                  <td>{h.name}</td>
-                  <td>{Number(h.price).toFixed(4)}</td>
-                  <td>{Number(h.quantity).toFixed(4)}</td>
-                  <td>{formatAmount(Number(h.price) * Number(h.quantity))}</td>
-                  <td>{h.notes || '-'}</td>
-                  <td>
-                    <button className="btn btn-default px-2 py-1 mr-2" onClick={() => setEditing(h)}>编辑</button>
-                    <button className="btn btn-default px-2 py-1" onClick={() => setDeleting(h)}>删除</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-      ) : (
-        <Card className="p-4"><div className="text-sm text-muted">该资产类型不支持持仓管理。</div></Card>
-      )}
+      {/* 持仓管理移动到页面末尾（仅 stock/fund 显示） */}
 
       {isMoneyFund && (
         <Card className="p-4">
@@ -203,7 +130,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
               <div><div className="text-muted">累计收益</div><div className="font-medium">{cumulative.toFixed(2)} {asset?.currency}</div></div>
             </div>
           ) : (
-            <div className="text-sm text-muted">请填写年化利率与起始日期以计算收益。</div>
+            <div className="text-sm text-muted">请在【编辑资产】中填写年化利率与起始日期以计算收益。</div>
           )}
         </Card>
       )}
@@ -268,7 +195,9 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
               amount: Number(assetEditing.amount),
               currency: assetEditing.currency,
               valuationDate: new Date(assetEditing.valuationDate),
-              notes: assetEditing.type?.label ? undefined : undefined,
+              annualRate: isMoneyFund ? (assetEditing.annualRate !== undefined && assetEditing.annualRate !== null ? Number(assetEditing.annualRate) : undefined) : undefined,
+              startDate: isMoneyFund ? (assetEditing.startDate ? new Date(assetEditing.startDate) : undefined) : undefined,
+              notes: undefined,
             };
             const res = await fetch(`/api/assets/${assetId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' });
             if (res.ok) { setAssetEditing(null); await refresh(); setSuccess('资产已更新'); } else { setError('资产更新失败，检查输入或登录'); }
@@ -283,6 +212,12 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
             <Input type="number" step="0.01" placeholder="基础金额" value={Number(assetEditing.amount)} onChange={(e) => setAssetEditing({ ...assetEditing, amount: Number(e.target.value) })} />
             <Input placeholder="币种" value={assetEditing.currency} onChange={(e) => setAssetEditing({ ...assetEditing, currency: e.target.value })} />
             <Input type="date" value={assetEditing.valuationDate?.slice?.(0,10) || ''} onChange={(e) => setAssetEditing({ ...assetEditing, valuationDate: e.target.value })} />
+            {isMoneyFund && (
+              <>
+                <Input type="number" step="0.0001" placeholder="年化利率(小数，例如0.03)" value={assetEditing.annualRate !== undefined && assetEditing.annualRate !== null ? Number(assetEditing.annualRate) : ''} onChange={(e) => setAssetEditing({ ...assetEditing!, annualRate: Number(e.target.value) })} />
+                <Input type="date" placeholder="起始日期" value={assetEditing.startDate?.slice?.(0,10) || ''} onChange={(e) => setAssetEditing({ ...assetEditing!, startDate: e.target.value })} />
+              </>
+            )}
           </div>
         )}
       </Modal>
@@ -294,6 +229,46 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         </>}>
         <div className="text-sm text-muted">删除后不可恢复，将删除该资产及其持仓。</div>
       </Modal>
+
+      {isStockOrFund ? (
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm font-medium">持仓管理</div>
+            <div className="text-sm text-muted">持仓总价值：{formatAmount(totalValue)}</div>
+          </div>
+          <form onSubmit={onAdd} className="grid md:grid-cols-4 gap-3 mb-3">
+            <Input placeholder="名称" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input type="number" step="0.0001" placeholder="价格" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+            <Input type="number" step="0.0001" placeholder="数量" required value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+            <Input placeholder="备注(可选)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <Button type="submit" disabled={loading}>{loading ? '提交中' : '添加'}</Button>
+          </form>
+
+          <table className="table">
+            <thead>
+              <tr><th>名称</th><th>价格</th><th>数量</th><th>小计</th><th>备注</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              {holdings.length === 0 && (<tr><td className="text-muted" colSpan={6}>暂无持仓</td></tr>)}
+              {holdings.map(h => (
+                <tr key={h.id}>
+                  <td>{h.name}</td>
+                  <td>{Number(h.price).toFixed(4)}</td>
+                  <td>{Number(h.quantity).toFixed(4)}</td>
+                  <td>{formatAmount(Number(h.price) * Number(h.quantity))}</td>
+                  <td>{h.notes || '-'}</td>
+                  <td>
+                    <button className="btn btn-default px-2 py-1 mr-2" onClick={() => setEditing(h)}>编辑</button>
+                    <button className="btn btn-default px-2 py-1" onClick={() => setDeleting(h)}>删除</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      ) : (
+        <Card className="p-4"><div className="text-sm text-muted">该资产类型不支持持仓管理。</div></Card>
+      )}
     </div>
   );
 }
