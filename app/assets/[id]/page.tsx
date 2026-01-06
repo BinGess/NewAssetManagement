@@ -25,6 +25,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
   const [assetEditing, setAssetEditing] = useState<FundAsset | null>(null);
   const [assetDeleting, setAssetDeleting] = useState<boolean>(false);
   const [types, setTypes] = useState<{ id: number; label: string }[]>([]);
+  const [jobRunning, setJobRunning] = useState(false);
   
 
   async function refresh() {
@@ -110,6 +111,15 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
             <div className="col-span-3 flex gap-2">
               <button className="btn btn-default" onClick={() => setAssetEditing(asset!)}>编辑资产</button>
               <button className="btn btn-default" onClick={() => setAssetDeleting(true)}>删除资产</button>
+              {isMoneyFund && (
+                <button className="btn btn-default" disabled={jobRunning} onClick={async () => {
+                  if (!asset) return;
+                  setError(null); setSuccess(null); setJobRunning(true);
+                  const res = await fetch(`/api/jobs/money-fund-daily?assetId=${assetId}`, { method: 'POST', credentials: 'same-origin' });
+                  if (res.ok) { setSuccess('已手动执行每日收益计算'); await refresh(); } else { setError('执行失败，请检查登录或服务端配置'); }
+                  setJobRunning(false);
+                }}>{jobRunning ? '执行中' : '手动执行日收益'}</button>
+              )}
             </div>
           </div>
         ) : <div className="text-sm text-muted">加载中...</div>}
