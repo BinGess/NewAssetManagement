@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
   });
 
   let processed = 0;
+  const processedIds: number[] = [];
+  const changes: Array<{ assetId: number; before: number; after: number; diff: number; at: string }> = [];
 
   for (const a of assets) {
     const rate = Number(a.annualRate || 0);
@@ -81,11 +83,38 @@ export async function POST(req: NextRequest) {
         prisma.asset.update({ where: { id: a.id }, data: { amount: after, valuationDate: dayStart } }),
         prisma.assetChange.create({ data: { assetId: a.id, beforeAmount: before, afterAmount: after, diff, at: new Date(dayStart.getTime() + 60000), notes: '自动收益(日复利)' } }),
       ]);
+      changes.push({ assetId: a.id, before, after, diff, at: new Date(dayStart.getTime() + 60000).toISOString() });
       amount = after;
     }
 
     processed++;
+    processedIds.push(a.id);
   }
 
-  return ok({ processed });
+  return ok({ processed, processedIds, changes });
+}
+
+export async function GET(req: NextRequest) {
+  const token = req.headers.get('x-job-token') || '';
+  const expected = process.env.JOB_TOKEN || '';
+  const unauthorizedResp = requireAuth(req);
+  const tokenOk = !!expected && token === expected;
+  if (!tokenOk && unauthorizedResp) return unauthorizedResp;
+
+  const { start: todayStart, end: todayEnd } = shanghaiDayBounds();
+  const assetIdParam = req.nextUrl.searchParams.get('assetId');
+  const assetIdNum = assetIdParam ? Number(assetIdParam) : null;
+  const assets = await prisma.asset.findMany({
+    where: {
+      ...(assetIdNum ? { id: assetIdNum } : {}),
+      OR: [
+        { type: { is: { code: { in: ['huobi', 'money_fund'] } } } },
+        { type: { is: { label: { contains: '货币基金' } } } },
+      ],
+      annualRate: { not: null },
+      startDate: { not: null },
+    },
+    select: { id: true, amount: true, annualRate: true, startDate: true, valuationDate: true },
+  });
+  return ok({ candidatesCount: assets.length, candidates: assets, todayStart: todayStart.toISOString(), todayEnd: todayEnd.toISOString() });
 }

@@ -68,6 +68,20 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
   const yearly = amount * rate;
   const cumulative = amount * rate * daysElapsed / 365;
 
+  const shNow = new Date(Date.now() + 8 * 60 * 60 * 1000);
+  const shY = shNow.getUTCFullYear();
+  const shM = shNow.getUTCMonth();
+  const shD = shNow.getUTCDate();
+  const shStartUTC = new Date(Date.UTC(shY, shM, shD));
+  const shStart = new Date(shStartUTC.getTime() - 8 * 60 * 60 * 1000);
+  const shEnd = new Date(shStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+  const triggerTime = new Date(shStart.getTime() + 60 * 1000);
+  const nowAfterTrigger = Date.now() >= triggerTime.getTime();
+  const updatedToday = changes.some(ch => {
+    const at = new Date(ch.at);
+    return at >= shStart && at <= shEnd && String(ch.notes || '').includes('自动收益');
+  });
+
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
     setError(null); setSuccess(null); setLoading(true);
@@ -146,7 +160,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
       )}
 
       <Card className="p-4">
-        <div className="text-sm font-medium mb-3">资产变更详情</div>
+        <div className="text-sm font-medium mb-3">资产变更详情 {isMoneyFund && (updatedToday ? (<span className="ml-2 text-green-600">今日更新成功</span>) : (nowAfterTrigger ? (<span className="ml-2 text-red-600">自动更新失败</span>) : null))}</div>
         {changes.length === 0 ? (
           <div className="text-sm text-muted">暂无变更记录</div>
         ) : (
