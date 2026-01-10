@@ -26,6 +26,9 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
   const [assetDeleting, setAssetDeleting] = useState<boolean>(false);
   const [types, setTypes] = useState<{ id: number; label: string }[]>([]);
   const [jobRunning, setJobRunning] = useState(false);
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [quotesLoading, setQuotesLoading] = useState(false);
+  const [realtimeTotal, setRealtimeTotal] = useState<number | null>(null);
   
 
   async function refresh() {
@@ -54,6 +57,7 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
     const label = asset?.type?.label || '';
     return code === 'huobi' || code === 'money_fund' || label.includes('货币基金');
   })();
+  const isStock = asset?.type?.code === 'stock';
 
   const amount = Number(asset?.amount) || 0;
   const rate = asset?.annualRate ? Number(asset.annualRate) : 0;
@@ -81,6 +85,34 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
     const at = new Date(ch.at);
     return at >= shStart && at <= shEnd && String(ch.notes || '').includes('自动收益');
   });
+  const triggerTimeStock = new Date(shStart.getTime() + 18 * 60 * 60 * 1000);
+  const nowAfterTriggerStock = Date.now() >= triggerTimeStock.getTime();
+  const stockUpdatedToday = changes.some(ch => {
+    const at = new Date(ch.at);
+    return at >= shStart && at <= shEnd && String(ch.notes || '').includes('自动收盘价更新');
+  });
+
+  useEffect(() => {
+    async function loadQuotes() {
+      if (!isStock) return;
+      if (holdings.length === 0) { setQuotes([]); setRealtimeTotal(null); return; }
+      setQuotesLoading(true);
+      const symbols = holdings.map(h => String(h.name || '').trim()).filter(Boolean);
+      const res = await fetch(`/api/quotes?symbols=${encodeURIComponent(symbols.join(','))}`);
+      const data = await res.json();
+      setQuotes(data);
+      let total = 0;
+      for (let i = 0; i < symbols.length; i++) {
+        const q = data[i];
+        const hh = holdings[i];
+        const p = q?.price ?? null;
+        if (p !== null) total += Number(p) * Number(hh.quantity);
+      }
+      setRealtimeTotal(Math.round(total * 100) / 100);
+      setQuotesLoading(false);
+    }
+    loadQuotes();
+  }, [isStock, holdings.map(h => h.name).join(','), holdings.map(h => h.quantity).join(',')]);
 
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -159,8 +191,56 @@ export default function AssetDetailPage({ params }: { params: { id: string } }) 
         </Card>
       )}
 
+      {isStock && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm font-medium">实时行情</div>
+            <div className="text-sm text-muted">{realtimeTotal !== null ? <>当前总值：{formatAmount(realtimeTotal)}</> : '加载中'}</div>
+          </div>
+          <div className="mb-3">
+            <button className="btn btn-default" onClick={async () => {
+              const symbols = holdings.map(h => String(h.name || '').trim()).filter(Boolean);
+              setQuotesLoading(true);
+              const res = await fetch(`/api/quotes?symbols=${encodeURIComponent(symbols.join(','))}`);
+              const data = await res.json();
+              setQuotes(data);
+              let total = 0;
+              for (let i = 0; i < symbols.length; i++) {
+                const q = data[i];
+                const hh = holdings[i];
+                const p = q?.price ?? null;
+                if (p !== null) total += Number(p) * Number(hh.quantity);
+              }
+              setRealtimeTotal(Math.round(total * 100) / 100);
+              setQuotesLoading(false);
+            }}>{quotesLoading ? '刷新中' : '手动刷新'}</button>
+          </div>
+          <table className="table">
+            <thead>
+              <tr><th>代码</th><th>实时价</th><th>数量</th><th>小计</th></tr>
+            </thead>
+            <tbody>
+              {holdings.length === 0 && (<tr><td className="text-muted" colSpan={4}>暂无持仓</td></tr>)}
+              {holdings.map((h, i) => {
+                const q = quotes[i];
+                const p = q?.price ?? null;
+                const subtotal = p !== null ? Number(p) * Number(h.quantity) : null;
+                return (
+                  <tr key={`rt-${h.id}`}>
+                    <td>{h.name}</td>
+                    <td>{p !== null ? Number(p).toFixed(4) : '-'}</td>
+                    <td>{Number(h.quantity).toFixed(4)}</td>
+                    <td>{subtotal !== null ? formatAmount(subtotal) : '-'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
       <Card className="p-4">
-        <div className="text-sm font-medium mb-3">资产变更详情 {isMoneyFund && (updatedToday ? (<span className="ml-2 text-green-600">今日更新成功</span>) : (nowAfterTrigger ? (<span className="ml-2 text-red-600">自动更新失败</span>) : null))}</div>
+        <div className="text-sm font-medium mb-3">资产变更详情 {isMoneyFund && (updatedToday ? (<span className="ml-2 text-green-600">今日更新成功</span>) : (nowAfterTrigger ? (<span className="ml-2 text-red-600">自动更新失败</span>) : null))} {isStock && (stockUpdatedToday ? (<span className="ml-2 text-green-600">今日更新成功</span>) : (nowAfterTriggerStock ? (<span className="ml-2 text-red-600">自动更新失败</span>) : null))}</div>
         {changes.length === 0 ? (
           <div className="text-sm text-muted">暂无变更记录</div>
         ) : (
